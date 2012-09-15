@@ -1,0 +1,193 @@
+#!/bin/bash
+
+IGNORE_FILE=".confgitignore"
+
+function main() {
+    if [ $# -eq 0 ]; then
+        show_help
+    fi
+
+    COMMAND=$1
+    shift
+
+    case "$COMMAND" in
+        init)    confgit_init "$@" ;;
+        install) confgit_install "$@" ;;
+        track)   confgit_track "$@" ;;
+        help)    show_help "$@" ;;
+        *)       run_git "$COMMAND" "$@" ;;
+    esac
+}
+
+function show_help() {
+    COMMAND=$1
+    case "$COMMAND" in
+        '')      show_help_main ;;
+        init)    show_help_init ;;
+        install) show_help_install ;;
+        track)   show_help_track ;;
+        *)       echo "Invalid confgit command: '$1'.  Try 'confgit help'." >&2
+                 exit 1 ;;
+    esac
+}
+
+function show_help_main() {
+    cat <<END
+Manages config files (dotfiles or rc files) in git.
+Usage: confgit COMMAND [ OPTIONS... ]
+
+Commands:
+    help    Show this help.
+    init    Create a new empty confgit repository.
+    install Install config files from a remote confgit repository.
+    track   Keep track of a new file or directory.
+
+Any other command is passed through to git, with the GIT_DIR variable set to
+point to your confgit repository.
+END
+    exit 0
+}
+
+function confgit_init() {
+    while getopts "hm:" FLAG; do
+        case "$FLAG" in
+            m)  MASTER_REPO_OPT="$OPTARG" ;;
+            h)  show_help_init ;;
+            *)  echo "Try 'confgit help init'." >&2
+                exit 1 ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+
+    MASTER_REPO="${1:-${MASTER_REPO_OPT:-$PWD/$USER.confgit}}"
+    REPO_NAME=$(basename "$MASTER_REPO")
+    echo "Creating the master repository for $REPO_NAME in: $MASTER_REPO"
+
+    set -o errexit -o pipefail
+
+    # First, we create a non-bare repo and add the initial required files to it.
+    TEMP_REPO=$(mktemp -d confgit.XXXXXXXXXX)
+    mkdir -p "$TEMP_REPO"
+    pushd "$TEMP_REPO"
+    git init
+
+    cat <<END > "$IGNORE_FILE"
+# Ignore file for $REPO_NAME.
+
+# confgit is supposed to track only specific files in your \$HOME directory, so we
+# tell git to ignore everything unless it's explicitly enabled below.
+/*
+
+# Include this file in the repository.
+!/$IGNORE_FILE
+
+# Your config files follow below.
+END
+    git add "$IGNORE_FILE"
+    git commit -m "Initial commit for the $REPO_NAME repository."
+    popd
+
+    # Then we convert the repo to a bare one, so it can be cloned easily to
+    # other machines.
+    git clone --bare "$TEMP_REPO" "$MASTER_REPO"
+    rm -rf "$TEMP_REPO"
+}
+
+function show_help_init() {
+    cat <<END
+Creates a new confgit master repository.  This is a bare repository that will
+store the "master copy" of your config files.  You'd normally export this
+somehow (via SSH, HTTP, or even github, if you're into that), and all your
+machines will push/pull from this repository.
+
+Usage: confgit init [ OPTIONS... ] [ MASTER_REPO ]
+
+Options:
+    TODO
+
+END
+    exit 0
+}
+
+function confgit_install() {
+    while getopts "hm:r:w:" FLAG; do
+        case "$FLAG" in
+            m)  MASTER_REPO_OPT="$OPTARG" ;;
+            w)  WORK_DIR_OPT="$OPTARG" ;;
+            r)  REPO_DIR_OPT="$OPTARG" ;;
+            h)  show_help_install ;;
+            *)  echo "Try 'confgit help install'." >&2
+                exit 1 ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+
+    MASTER_REPO="${1:-$MASTER_REPO_OPT}"
+    if [ -z "$MASTER_REPO" ]; then
+        echo "Please specify the master repository (-m)." >&2
+        exit 1
+    fi
+
+    WORK_DIR="${WORK_DIR_OPT:-$PWD}"
+    REPO_DIR="${REPO_DIR_OPT:-${CONFGIT_REPO_DIR:-$WORK_DIR/.confgit}}"
+
+    echo "Installing config files from: $MASTER_REPO"
+    echo "to: $WORK_DIR"
+    echo "with the git repository: $REPO_DIR"
+
+    git clone --bare "$MASTER_REPO" "$REPO_DIR"
+    git config -f "$REPO_DIR/config" core.bare false
+    git config -f "$REPO_DIR/config" core.worktree "$WORK_DIR"
+    git config -f "$REPO_DIR/config" core.logallrefupdates true
+
+    export GIT_DIR="$REPO_DIR"
+    git read-tree -v HEAD
+    git checkout-index -a
+    ln -s -f "$WORK_DIR/$IGNORE_FILE" "$REPO_DIR/info/exclude"
+
+    git status
+}
+
+function show_help_install() {
+    cat <<END
+Installs config files from a master confgit repository to the current machine.
+Usage: confgit install [ OPTIONS... ] [ MASTER_REPO ]
+
+Options:
+    TODO
+
+END
+    exit 0
+}
+
+function confgit_track() {
+    set -o errexit -o pipefail
+
+    export GIT_DIR="${CONFGIT_REPO_DIR:-.confgit}"
+    WORK_DIR=$(git config core.worktree)
+
+    for FILE in "$@"; do
+        echo "!/$FILE" >> "$WORK_DIR/$IGNORE_FILE"
+    done
+
+    git add -- "$WORK_DIR/$IGNORE_FILE" "$@"
+}
+
+function show_help_track() {
+    cat <<END
+Tells confgit to keep track of a new file or directory.
+Usage: confgit track [ FILES... ]
+
+Options:
+    TODO
+
+END
+    exit 0
+}
+
+function run_git() {
+    export GIT_DIR="${CONFGIT_REPO_DIR:-.confgit}"
+    exec git "$@"
+}
+
+main "$@"

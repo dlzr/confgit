@@ -1,0 +1,82 @@
+Getting started with confgit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+First of all, make sure you have git installed.  Then, get a copy of confgit.
+Chances are you can get it from the same place from where you're reading this
+text right now.  Now, on to the real work...
+
+
+First time setup
+~~~~~~~~~~~~~~~~
+
+Go to the directory where you want your master repository to live (e.g. on a
+machine that's accessible from all other machines that are going to share the
+configuration).  Create the master repo:
+
+    $ confgit init dotfiles.git
+
+Go to your $HOME, and install the (empty) master repo there:
+
+    $ confgit install /path/to/dotfiles.git
+
+Normally the last piece of output of that command should tell you that there's
+nothing to commit, and that the working directory is clean.  You now should
+have in your home a new hidden directory (.confgit) -- that's your git
+directory and a hidden files (.confgitignore) which is basically a .gitignore
+file for your config files.
+
+You can now use the usual git commands to add your config files to the
+repository, the only difference being that you'll run "confgit" instead of
+"git":
+
+    $ confgit track .bashrc
+    $ confgit commit -m "Adds .bashrc"
+    $ confgit status
+    $ confgit log
+
+When you're done adding your files, you can push the changes to the master repo:
+
+    $ confgit push
+
+Congratulations!  Your config files are now in source control.
+
+
+New machine setup
+~~~~~~~~~~~~~~~~~
+
+When you get a new machine, and you want to set it up with your config files,
+you just need to make sure it has git installed, and you need a copy of confgit
+(just as in the initial setup above).
+
+You then just install your config files, as you did in the initial setup above:
+
+    $ confgit install ssh://path/to/dotfiles.git
+
+If the master repo isn't the initial empty one, chances are that at least some
+of the config files you're trying to install already exist on this machine.
+For instance, most distros set up some basic .bashrc file when creating a new
+user.  If that happens, 'confgit install' won't overwrite the existing config
+files.  Instead, if you run:
+
+    $ confgit status
+
+you'll see that the local files appear as local modifications on top of the
+versions from the master repository.  Just like with any local modifications,
+you can either reject them and keep the version from your repository (which is
+what you'll want most of the times) with:
+
+    $ confgit reset --hard HEAD
+
+or you can edit the files, keeping whatever changes you like, and then submit
+them with:
+
+    $ confgit commit -a
+    $ confgit push
+
+Whenever you've pushed new versions of the config files to the master
+repository from a different machine, you can pull the files to the current
+machine with:
+
+    $ confgit pull
+
+Have fun!
