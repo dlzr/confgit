@@ -163,7 +163,7 @@ END
 function confgit_track() {
     set -o errexit -o pipefail
 
-    export GIT_DIR="${CONFGIT_REPO_DIR:-.confgit}"
+    export GIT_DIR="${CONFGIT_REPO_DIR:-$HOME/.confgit}"
     WORK_DIR=$(git config core.worktree)
 
     for FILE in "$@"; do
@@ -186,7 +186,7 @@ END
 }
 
 function run_git() {
-    export GIT_DIR="${CONFGIT_REPO_DIR:-.confgit}"
+    export GIT_DIR="${CONFGIT_REPO_DIR:-$HOME/.confgit}"
     exec git "$@"
 }
 
