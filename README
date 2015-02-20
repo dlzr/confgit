@@ -2,8 +2,13 @@ Getting started with confgit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 First of all, make sure you have git installed.  Then, get a copy of confgit.
-Chances are you can get it from the same place from where you're reading this
-text right now.  Now, on to the real work...
+Chances are you can get it from the same place where you found this README:
+
+    $ git clone /path/to/confgit/repository
+
+It's also useful to make sure confgit is in your $PATH, so either add the
+confgit repo to your $PATH, or create a symlink to confgit in a directory that's
+already in your $PATH.  I use ~/bin for this.
 
 
 First time setup
@@ -22,7 +27,7 @@ Go to your $HOME, and install the (empty) master repo there:
 Normally the last piece of output of that command should tell you that there's
 nothing to commit, and that the working directory is clean.  You now should
 have in your home a new hidden directory (.confgit) -- that's your git
-directory and a hidden files (.confgitignore) which is basically a .gitignore
+directory and a hidden file (.confgitignore) which is basically a .gitignore
 file for your config files.
 
 You can now use the usual git commands to add your config files to the
@@ -78,5 +83,23 @@ repository from a different machine, you can pull the files to the current
 machine with:
 
     $ confgit pull
+
+
+Advanced usage: per-machine branches
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The above workflow works if you have relatively homogenuous machines and you
+want the same configs on all of them.  But if you have config chunks that only
+need to be on some machines, you can create a git branch for each machine and
+integrate patches between them as needed.
+
+In my setup, the master branch contains the basic configuration I want on all
+machines, and the machine-specific branch contains only a few diffs on top of
+that.  When making changes, I first decide whether this particular change should
+be propagated to all machines, and if that's the case, I checkout the master
+branch, do the change there, and then merge the master branch into the machine
+branch.
+
+But confgit is really git, so you can use whatever workflow works for you.
 
 Have fun!
