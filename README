@@ -85,6 +85,42 @@ machine with:
     $ confgit pull
 
 
+Ongoing config updates
+~~~~~~~~~~~~~~~~~~~~~~
+
+After the initial setup, if you want to modify a config file, you first need to
+make sure you're using the latest version of the configs (this might not be the
+case if you updated the master branch from a different machine):
+
+    $ confgit remote show origin
+
+If that says "local out of date", you need to pull the latest updates:
+
+    $ confgit pull
+
+You're now ready to make your changes.  If the files you're touching are already
+tracked by confgit (i.e., they're listed in .confgitignore) just modify them.
+If they're new files, you have to add them to the repo:
+
+    $ confgit track .my-new-dotfile
+
+You'll see .confgitignore get updated to mention your new file.  If you're
+dealing with directories, or if you're trying weird tricks like "track this file
+from this directory but not the rest" you may need to massage .confgitignore
+manually until `confgit status` shows a satisfactory diff.
+
+Once you're happy with the diff, just commit as usual:
+
+    $ confgit commit -a
+
+and push to the central repo:
+
+    $ confgit push
+
+You should now go to your other machines and pull the updates, but you can
+always do that later, when you notice the machines don't yet have the updates.
+
+
 Advanced usage: per-machine branches
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
