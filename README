@@ -2,9 +2,8 @@ Getting started with confgit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 First of all, make sure you have git installed.  Then, get a copy of confgit.
-Chances are you can get it from the same place where you found this README:
 
-    $ git clone /path/to/confgit/repository
+    $ git clone https://github.com/dlzr/confgit.git
 
 It's also useful to make sure confgit is in your $PATH, so either add the
 confgit repo to your $PATH, or create a symlink to confgit in a directory that's
